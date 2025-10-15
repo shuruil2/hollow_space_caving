@@ -41,9 +41,6 @@ def calc_auroc(known_scores, unknown_scores):
     
     return auc_score
 
-    
-
-
 
 class FSLTrainer(Trainer):
     def __init__(self, args):
@@ -118,25 +115,6 @@ class FSLTrainer(Trainer):
                 data_tm = time.time()
                 self.dt.add(data_tm-start_tm)
                  # get saved centers
-                # if args.open_loss:
-                #     logits, open_logits, reg_logits = self.para_model(data)
-                # else:
-
-                #     logits, reg_logits = self.para_model(data)
-                
-                # if reg_logits is not None:
-                #     if args.loss_type=='ce_loss':
-                #         loss = F.cross_entropy(logits, label)
-                #     elif args.loss_type=='edl_loss':
-                #         loss = select_edl_loss(logits, label_hot, epoch, self.args.closed_way, self.args)
-                
-                # if args.open_loss:
-                #     Q = torch.ones_like(open_logits)
-                #     P = open_logits+1
-                #     open_loss = (P*(P/Q).log()).sum(axis = 1).mean()
-                #     total_loss = loss +args.balance * F.cross_entropy(reg_logits, label_aux)+args.open_loss_coeff*open_loss
-                # else:
-                #     total_loss = loss +args.balance * F.cross_entropy(reg_logits, label_aux)
                 # hsc loss as follows:
                 model_name = str(self.args.model_class).lower()
 
@@ -161,7 +139,6 @@ class FSLTrainer(Trainer):
 
                     # 2) 闭集角度紧致损失（基于 logits 的版本）
                     loss_ac = angle_compact_loss(
-                        features=None, prototypes=None,
                         labels=label, margin=self.open_margin, kappa=self.kappa,
                         logits=close_logits
                     )
@@ -206,33 +183,33 @@ class FSLTrainer(Trainer):
                     # 6) 指标
                     logits = close_logits  # 复用下方的 acc 计算
 
-                else:
-                    # ===== 原 FEAT / 其他模型分支保留 =====
-                    if args.open_loss:
-                        logits, open_logits, reg_logits = self.para_model(data)
-                    else:
-                        logits, reg_logits = self.para_model(data)
+                # else:
+                #     # ===== 原 FEAT / 其他模型分支保留 =====
+                #     if args.open_loss:
+                #         logits, open_logits, reg_logits = self.para_model(data)
+                #     else:
+                #         logits, reg_logits = self.para_model(data)
 
-                    if reg_logits is not None:
-                        if args.loss_type == 'ce_loss':
-                            loss = F.cross_entropy(logits, label)
-                        elif args.loss_type == 'edl_loss':
-                            loss = select_edl_loss(logits, label_hot, epoch, self.args.closed_way, self.args)
-                        else:
-                            raise ValueError('Unknown loss_type: {}'.format(args.loss_type))
-                    else:
-                        # 极端情况下没有 reg_logits，给个兜底
-                        loss = F.cross_entropy(logits, label)
+                #     if reg_logits is not None:
+                #         if args.loss_type == 'ce_loss':
+                #             loss = F.cross_entropy(logits, label)
+                #         elif args.loss_type == 'edl_loss':
+                #             loss = select_edl_loss(logits, label_hot, epoch, self.args.closed_way, self.args)
+                #         else:
+                #             raise ValueError('Unknown loss_type: {}'.format(args.loss_type))
+                #     else:
+                #         # 极端情况下没有 reg_logits，给个兜底
+                #         loss = F.cross_entropy(logits, label)
 
-                    if args.open_loss:
-                        Q = torch.ones_like(open_logits)
-                        P = open_logits + 1
-                        open_loss = (P * (P / Q).log()).sum(dim=1).mean()
-                        total_loss = loss + args.balance * F.cross_entropy(reg_logits, label_aux) + args.open_loss_coeff * open_loss
-                    else:
-                        # 你原代码这里行末有一个多余的 '+' 会导致语法错误，修正如下：
-                        total_loss = loss + args.balance * F.cross_entropy(reg_logits, label_aux)
-                # hsc loss end
+                #     if args.open_loss:
+                #         Q = torch.ones_like(open_logits)
+                #         P = open_logits + 1
+                #         open_loss = (P * (P / Q).log()).sum(dim=1).mean()
+                #         total_loss = loss + args.balance * F.cross_entropy(reg_logits, label_aux) + args.open_loss_coeff * open_loss
+                #     else:
+                        
+                #         total_loss = loss + args.balance * F.cross_entropy(reg_logits, label_aux)
+                # # hsc loss end
 
 
                 tl2.add(total_loss)

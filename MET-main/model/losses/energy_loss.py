@@ -35,6 +35,7 @@ def angle_compact_loss(
     labels: torch.Tensor,
     margin: float = 0.1,
     kappa: float = 10.0,
+    logits: torch.Tensor = None,
 ) -> torch.Tensor:
     """Compute an angular compactness loss with an open-set margin.
 
@@ -71,6 +72,8 @@ def angle_compact_loss(
         A scalar loss tensor representing the average angular loss
         across all samples.
     """
+    if logits is not None:
+        return F.cross_entropy(logits, labels)
     # Compute cosine similarities between features and prototypes
     # Expect both features and prototypes to be L2-normalised
     logits = F.linear(features, prototypes)  # shape (N, C)

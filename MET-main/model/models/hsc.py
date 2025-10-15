@@ -236,8 +236,9 @@ class HSCModel(FewShotModel):
                 unk_feats = torch.cat(feats_list, dim=0)  # [Nu, D]
 
                 # 未知能量（可选，用于能量整形的“未知高能”）
-                with torch.no_grad():  # 能量不需要反传到 encoder/head 也可以；如需训练 energy_head 可去掉这行
-                    unk_energies = self.energy_head(unk_feats).squeeze(-1)  # [Nu]
+                unk_feats_detached = unk_feats.detach()  # 不回传到 encoder
+                unk_energies = self.energy_head(unk_feats_detached).squeeze(-1)
+
 
                 # 关键：未知证据 —— 让梯度更新 evidence_head，但不回流到 encoder（更稳）
                 # 你的 evidence_head 末尾是 Softplus，输出本身就是非负的 evidence（而不是 alpha），可以直接用
@@ -306,17 +307,23 @@ class HSCModel(FewShotModel):
         )
 
         # Generate far OOD unknowns if an OOD loader is provided.
-        if self.ood_loader is not None:
-            far_feats = hsc_utils.sample_far_ood(
-                self.ood_loader,
-                self.encoder,
-                num_samples=sup.size(0),
-                device=sup.device,
-            )
-        else:
-            far_feats = None
+
+        far_feats = self.generate_far_ood_samples(
+            num_samples=sup.size(0),
+            image_size=84,
+            device=sup.device,
+        )
 
         return hu_feats, diff_feats, far_feats
+
+def generate_far_ood_samples(self, num_samples, image_size, device):
+    """Generate far OOD (Out-of-Distribution) samples."""
+    # 使用高斯噪声生成远域样本（可以改为其他生成方法）
+    noise = torch.randn(num_samples, 3, image_size, image_size, device=device)  # 高斯噪声
+
+    far_ood_samples = noise  #
+
+    return far_ood_samples
 
 
 __all__ = ['HSCModel']
